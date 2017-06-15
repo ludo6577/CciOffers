@@ -8,7 +8,7 @@ using UnityEngine.UI;
 public class CameraScript : MonoBehaviour
 {
 
-    public Camera UICamera;
+    public GameObject CameraParent;
 
     public EventSystem EventSystem;
     private PointerEventData pointerEventData;
@@ -16,6 +16,9 @@ public class CameraScript : MonoBehaviour
 
     public Image FadeMask;
     public float FadeSpeed;
+
+    public Image Reticule;
+    public float FillSpeed;
 
     void Start()
     {
@@ -46,7 +49,20 @@ public class CameraScript : MonoBehaviour
                 oldRaycastedGameObjects.Add(other);
                 watchableObject.OnWatch();
             }
+
+            if (raycastResults[i].gameObject.tag == "teleport1")
+            {
+                Reticule.fillAmount += FillSpeed;
+                if (Reticule.fillAmount >= 1f)
+                {
+                    StartCoroutine(Fade());
+                    Reticule.fillAmount = 0f;
+                }
+            }
         }
+
+        if(Reticule.fillAmount >= 0f)
+            Reticule.fillAmount -= FillSpeed /2;
 
         for (var i = oldRaycastedGameObjects.Count - 1; i >= 0; i--)
         {
@@ -57,6 +73,29 @@ public class CameraScript : MonoBehaviour
                 watchableObject.UnWatch();
                 oldRaycastedGameObjects.Remove(oldRaycastedGameObjects[i]);
             }
+        }
+    }
+
+    private IEnumerator Fade()
+    {
+        var doWhile = true;
+        while (doWhile)
+        {
+            FadeMask.color = new Color(FadeMask.color.r, FadeMask.color.g, FadeMask.color.b, FadeMask.color.a +FadeSpeed);
+            Reticule.fillAmount = 0f;
+            yield return new WaitForEndOfFrame();
+            if (FadeMask.color.a >= 1f)
+                doWhile = false;
+        }
+
+        CameraParent.transform.position = new Vector3(CameraParent.transform.position.x, CameraParent.transform.position.y + 20, CameraParent.transform.position.z);
+        doWhile = true;
+        while (doWhile)
+        {
+            FadeMask.color = new Color(FadeMask.color.r, FadeMask.color.g, FadeMask.color.b, FadeMask.color.a - FadeSpeed);
+            yield return new WaitForEndOfFrame();
+            if (FadeMask.color.a <= 0f)
+                doWhile = false;
         }
     }
 }
